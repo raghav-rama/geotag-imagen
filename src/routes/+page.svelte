@@ -182,6 +182,15 @@
 			</label>
 		</div>
 
+		{#if uploadedImage && !$locationStore}
+			<div class="preview-container">
+				<img src={uploadedImage} alt="Preview" class="preview-image" />
+				<div class="tip-message">
+					👇 Click on the map or use the search bar to add location overlay
+				</div>
+			</div>
+		{/if}
+
 		{#if uploadedImage && $locationStore && mapThumbnail}
 			<div class="result-container" bind:this={resultContainer}>
 				<img src={uploadedImage} alt="Uploaded" class="uploaded-image" />
@@ -193,6 +202,7 @@
 		{/if}
 
 		<div class="map-container">
+			<h2 class="map-title">Select Location</h2>
 			<Map />
 		</div>
 	</div>
@@ -468,7 +478,52 @@
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 	}
 
+	.map-title {
+		margin: 0 0 16px 0;
+		font-size: 1.25rem;
+		font-weight: 500;
+		color: #333;
+	}
+
+	.dark-mode .map-title {
+		color: #fff;
+	}
+
 	.dark-mode .map-container {
 		background: #2a2a2a;
+	}
+
+	.preview-container {
+		margin: 20px auto;
+		max-width: 800px;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+	}
+
+	.preview-image {
+		width: 100%;
+		height: auto;
+		display: block;
+		object-fit: contain;
+	}
+
+	.dark-mode .preview-container {
+		background: #2a2a2a;
+	}
+
+	.tip-message {
+		text-align: center;
+		padding: 12px;
+		color: #666;
+		font-size: 0.9rem;
+		background: rgba(0, 0, 0, 0.05);
+		border-top: 1px solid rgba(0, 0, 0, 0.1);
+	}
+
+	.dark-mode .tip-message {
+		color: #aaa;
+		background: rgba(255, 255, 255, 0.05);
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
 	}
 </style>

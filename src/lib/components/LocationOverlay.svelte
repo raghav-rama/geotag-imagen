@@ -9,7 +9,6 @@
 	<div class="overlay">
 		<div class="map-thumbnail">
 			<img src={mapThumbnail} alt="Location" class="thumbnail-img" />
-			<div class="google-logo">Google</div>
 		</div>
 		<div class="location-text">
 			<h2>{location.address}</h2>
@@ -70,15 +69,6 @@
 		height: 100%;
 		object-fit: cover;
 		border-radius: 4px;
-	}
-
-	.google-logo {
-		position: absolute;
-		bottom: 5px;
-		left: 5px;
-		font-size: 10px;
-		font-weight: 500;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 	}
 
 	.location-text {
