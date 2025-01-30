@@ -64,32 +64,37 @@
 				maxZoom: 19
 			}).addTo(map);
 
+			locationStore.subscribe((location) => {
+				if (location && map) {
+					if (searchMarker) {
+						searchMarker.remove();
+					}
+
+					searchMarker = L.marker([location.lat, location.lng], {
+						icon: L.divIcon({
+							className: 'custom-marker',
+							html: `<div class="marker-pin"></div>`,
+							iconSize: [30, 30],
+							iconAnchor: [15, 30]
+						})
+					}).addTo(map);
+
+					map.setView([location.lat, location.lng], map.getZoom());
+
+					const ripple = L.divIcon({
+						className: 'ripple-marker',
+						html: '<div class="ripple"></div>',
+						iconSize: [50, 50],
+						iconAnchor: [25, 25]
+					});
+
+					const rippleMarker = L.marker([location.lat, location.lng], { icon: ripple }).addTo(map);
+					setTimeout(() => rippleMarker.remove(), 1000);
+				}
+			});
+
 			map.on('click', async (e: any) => {
 				const { lat, lng } = e.latlng;
-
-				if (searchMarker) {
-					searchMarker.remove();
-				}
-
-				searchMarker = L.marker([lat, lng], {
-					icon: L.divIcon({
-						className: 'custom-marker',
-						html: `<div class="marker-pin"></div>`,
-						iconSize: [30, 30],
-						iconAnchor: [15, 30]
-					})
-				}).addTo(map);
-
-				const ripple = L.divIcon({
-					className: 'ripple-marker',
-					html: '<div class="ripple"></div>',
-					iconSize: [50, 50],
-					iconAnchor: [25, 25]
-				});
-
-				const rippleMarker = L.marker([lat, lng], { icon: ripple }).addTo(map);
-				setTimeout(() => rippleMarker.remove(), 1000);
-
 				await locationStore.setLocation(lat, lng);
 			});
 		}
