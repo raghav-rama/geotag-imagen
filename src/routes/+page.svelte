@@ -10,6 +10,9 @@
 	let mapThumbnail: string | null = null;
 	let isDarkMode = false;
 	let searchQuery = '';
+	let searchResults: { display_name: string; lat: number; lon: number }[] = [];
+	let isSearching = false;
+	let searchTimeout: ReturnType<typeof setTimeout>;
 
 	onMount(() => {
 		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -79,6 +82,45 @@
 			isGenerating = false;
 		}
 	}
+
+	async function handleSearch() {
+		if (!searchQuery.trim()) return;
+
+		try {
+			isSearching = true;
+			const response = await fetch(
+				`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+			);
+			const data = await response.json();
+			searchResults = data.map((item: any) => ({
+				display_name: item.display_name,
+				lat: parseFloat(item.lat),
+				lon: parseFloat(item.lon)
+			}));
+		} catch (error) {
+			console.error('Search failed:', error);
+			searchResults = [];
+		} finally {
+			isSearching = false;
+		}
+	}
+
+	function selectLocation(result: { lat: number; lon: number }) {
+		locationStore.setLocation(result.lat, result.lon);
+		searchResults = [];
+		searchQuery = '';
+	}
+
+	function debouncedSearch() {
+		clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			if (searchQuery.trim()) {
+				handleSearch();
+			} else {
+				searchResults = [];
+			}
+		}, 300);
+	}
 </script>
 
 <svelte:head>
@@ -99,8 +141,9 @@
 				placeholder="Search location..."
 				bind:value={searchQuery}
 				class="search-input"
+				on:input={debouncedSearch}
 			/>
-			<button class="search-button" aria-label="Search">
+			<button class="search-button" aria-label="Search" on:click={handleSearch}>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
 					<path
 						fill="none"
@@ -110,6 +153,15 @@
 					/>
 				</svg>
 			</button>
+			{#if searchResults.length > 0}
+				<div class="search-results">
+					{#each searchResults as result}
+						<button class="search-result-item" on:click={() => selectLocation(result)}>
+							{result.display_name}
+						</button>
+					{/each}
+				</div>
+			{/if}
 		</div>
 		<button class="theme-toggle" on:click={toggleDarkMode}>
 			{#if isDarkMode}
@@ -130,8 +182,6 @@
 			</label>
 		</div>
 
-		<Map />
-
 		{#if uploadedImage && $locationStore && mapThumbnail}
 			<div class="result-container" bind:this={resultContainer}>
 				<img src={uploadedImage} alt="Uploaded" class="uploaded-image" />
@@ -141,6 +191,10 @@
 				{isGenerating ? 'Generating...' : 'Download Image'}
 			</button>
 		{/if}
+
+		<div class="map-container">
+			<Map />
+		</div>
 	</div>
 </div>
 
@@ -293,12 +347,18 @@
 		border-radius: 12px;
 		overflow: hidden;
 		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+		background: white;
+	}
+
+	.dark-mode .result-container {
+		background: #2a2a2a;
 	}
 
 	.uploaded-image {
 		width: 100%;
 		height: auto;
 		display: block;
+		object-fit: contain;
 	}
 
 	.download-btn {
@@ -312,6 +372,9 @@
 		font-weight: 500;
 		transition: all 0.3s ease;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		display: block;
+		margin-left: auto;
+		margin-right: auto;
 	}
 
 	.download-btn:hover {
@@ -327,11 +390,85 @@
 
 	@media (max-width: 768px) {
 		.content {
-			padding: 16px;
+			padding: 16px 0;
+			margin-top: 60px;
 		}
 
-		.search-input {
-			font-size: 0.9rem;
+		.result-container {
+			margin: 12px 0;
+			border-radius: 0;
+			max-width: 100%;
+			box-shadow: none;
 		}
+
+		.map-container {
+			margin: 12px;
+			border-radius: 8px;
+		}
+
+		.upload-section {
+			margin: 0 16px 1rem 16px;
+		}
+
+		.download-btn {
+			margin: 12px 16px;
+			width: calc(100% - 32px);
+		}
+	}
+
+	.search-results {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		background: #ffffff;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		border-radius: 8px;
+		margin-top: 4px;
+		max-height: 300px;
+		overflow-y: auto;
+		z-index: 1000;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.dark-mode .search-results {
+		background: #2a2a2a;
+		border-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.search-result-item {
+		width: 100%;
+		padding: 8px 12px;
+		border: none;
+		background: none;
+		text-align: left;
+		cursor: pointer;
+		color: #333;
+		font-size: 14px;
+		transition: background-color 0.2s;
+	}
+
+	.dark-mode .search-result-item {
+		color: #ffffff;
+	}
+
+	.search-result-item:hover {
+		background-color: rgba(0, 0, 0, 0.05);
+	}
+
+	.dark-mode .search-result-item:hover {
+		background-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.map-container {
+		padding: 20px;
+		background: white;
+		border-radius: 12px;
+		margin-top: 20px;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+	}
+
+	.dark-mode .map-container {
+		background: #2a2a2a;
 	}
 </style>
