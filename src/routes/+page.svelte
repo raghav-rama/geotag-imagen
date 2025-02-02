@@ -49,16 +49,34 @@
 			isGenerating = true;
 			await new Promise((resolve) => setTimeout(resolve, 500));
 
+			const originalStyles = {
+				position: resultContainer.style.position,
+				width: resultContainer.style.width,
+				maxWidth: resultContainer.style.maxWidth,
+				overflow: resultContainer.style.overflow,
+				margin: resultContainer.style.margin,
+				borderRadius: resultContainer.style.borderRadius
+			};
+
+			resultContainer.style.position = 'relative';
+			resultContainer.style.width = 'auto';
+			resultContainer.style.maxWidth = 'none';
+			resultContainer.style.overflow = 'visible';
+			resultContainer.style.margin = '0';
+			resultContainer.style.borderRadius = '0';
+
 			const { toCanvas } = await import('html-to-image');
 			const canvas = await toCanvas(resultContainer, {
 				quality: 1,
 				pixelRatio: 2,
-				skipAutoScale: true,
+				skipAutoScale: false,
 				skipFonts: true,
 				style: {
 					transform: 'none'
 				}
 			});
+
+			Object.assign(resultContainer.style, originalStyles);
 
 			canvas.toBlob(
 				(blob) => {
